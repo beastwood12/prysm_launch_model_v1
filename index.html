@@ -10,7 +10,7 @@
         body { font-family: 'Segoe UI', sans-serif; margin: 0; padding: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; }
         .container { max-width: 1600px; margin: 0 auto; background: white; border-radius: 20px; padding: 30px; box-shadow: 0 20px 40px rgba(0,0,0,0.1); }
         .title-container { display: flex; align-items: center; justify-content: center; margin-bottom: 30px; }
-        .prysm-logo { width: 60px; height: 60px; margin-right: 20px; object-fit: contain; }
+        .prysm-logo { width: 60px; height: 60px; margin-right: 20px; object-fit: contain; border: 2px solid #333; border-radius: 8px; padding: 4px; background: white; }
         .logo-placeholder { width: 60px; height: 60px; margin-right: 20px; background: linear-gradient(45deg, #667eea, #764ba2); border-radius: 12px; display: flex; align-items: center; justify-content: center; }
         .logo-text { color: white; font-weight: bold; font-size: 18px; }
         h1 { color: #2c3e50; font-size: 2.5em; margin: 0; background: linear-gradient(45deg, #667eea, #764ba2); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
@@ -55,12 +55,11 @@
 <body>
     <div class="container">
         <div class="title-container">
-            <img src="images/Prysm_logol.png"
+            <img src="images/Prysm_logo.png" 
                  alt="Prysm Logo" 
                  class="prysm-logo"
                  onerror="this.style.display='none'; document.querySelector('.logo-placeholder').style.display='flex';" />
             
-            <!-- Fallback placeholder that looks professional -->
             <div class="logo-placeholder" style="display: none;">
                 <div class="logo-text">Prysm</div>
             </div>
@@ -114,8 +113,8 @@
                     <div class="param-group">
                         <h3>📱 Product Settings</h3>
                         <div class="param"><label>Prysm Price ($)</label><input type="number" id="price" value="300"></div>
-                        <div class="param"><label>Scans per Month</label><input type="number" id="scans" value="20"></div>
-                        <div class="param"><label>Conversion Rate (%)</label><input type="number" id="conversion" value="15"></div>
+                        <div class="param"><label>Scans per Month</label><input type="number" id="scans" value="80"></div>
+                        <div class="param"><label>Conversion Rate (%)</label><input type="number" id="conversion" value="10"></div>
                         <div class="param"><label>Average Order ($)</label><input type="number" id="orderSize" value="85"></div>
                         <div class="param"><label>Max Devices Per Person</label><input type="number" id="maxDevices" value="1"></div>
                     </div>
@@ -159,15 +158,15 @@
         <div class="model-explanation">
             <h3>How the Model Works</h3>
             <div class="explanation-content">
-                <p><strong>1. Prysm Adoption:</strong> Based on price sensitivity (lower price = higher adoption) and participation rate, with gradual rollout over time.</p>
+                <p><strong>1. Prysm Adoption:</strong> Front-loaded adoption curve reflecting high initial excitement (75% in month 1) that tapers off to stabilization, based on price sensitivity and participation rate.</p>
                 
                 <p><strong>2. Direct Revenue:</strong> Prysm devices generate revenue through scans that convert to product orders (Scans × Conversion Rate × Average Order).</p>
                 
                 <p><strong>3. Engagement Effect:</strong> More scans per device create an engagement multiplier (up to 2x) that strengthens retention and subscription impacts.</p>
                 
-                <p><strong>4. Retention Improvements:</strong> Better retention means fewer sales leaders leave each month, with the effect scaling based on Prysm penetration and engagement. The 3-month retention improvement is applied as a monthly benefit (divided by 3).</p>
+                <p><strong>4. Retention Improvements:</strong> Better retention means fewer sales leaders leave each month, with moderate impact factors (0.25 for existing, 0.35 for new leaders) scaling based on Prysm penetration and engagement. The 3-month retention improvement is applied as a monthly benefit (divided by 3).</p>
                 
-                <p><strong>5. Sales Leader Growth:</strong> Enhanced retention leads to more total sales leaders, while improved subscriptions drive new leader recruitment.</p>
+                <p><strong>5. Sales Leader Growth:</strong> Enhanced retention leads to more total sales leaders, while improved subscriptions drive new leader recruitment with stronger multipliers (0.8 for subscription growth, 0.5 for penetration effect).</p>
                 
                 <p><strong>6. Business Impact:</strong> Three types of sales boosts apply based on penetration:
                     <br>• <em>SCS Boost:</em> Increased sales of SCS products (25% of total sales)
@@ -183,6 +182,8 @@
     </div>
 
     <script>
+        console.log("🚀 NEW FRONT-LOADED MODEL LOADED - High Initial Penetration Active!");
+        
         const actualData = {
             'Global': {
                 months: ['Oct', 'Nov', 'Dec', 'Jan', 'Feb'],
@@ -316,16 +317,34 @@
                     scans: [0, 0, 0, 0, 0]
                 };
 
+                // Apply Prysm impact from Dec onwards (index 2+)
                 for (let i = 2; i < 5; i++) {
                     const monthsSinceLaunch = i - 2;
                     
+                    // NEW FRONT-LOADED ADOPTION CURVE
                     const baseAdoptionRate = pricePurchaseIntent * inputs.participation;
-                    const adoptionProgress = 1 - Math.exp(-0.5 * (monthsSinceLaunch + 1));
+                    let adoptionProgress;
+                    if (monthsSinceLaunch === 0) {
+                        adoptionProgress = 0.75; // 75% in first month - HIGH INITIAL EXCITEMENT!
+                    } else if (monthsSinceLaunch === 1) {
+                        adoptionProgress = 0.85; // 85% total by second month
+                    } else {
+                        adoptionProgress = 0.95; // 95% total by third month
+                    }
                     const currentAdoptionRate = baseAdoptionRate * adoptionProgress;
                     
                     const potentialAdopters = Math.round(data.salesLeaders[i] * currentAdoptionRate);
                     const actualDevicesSold = potentialAdopters * inputs.maxDevices;
                     const penetration = data.salesLeaders[i] > 0 ? actualDevicesSold / data.salesLeaders[i] : 0;
+                    
+                    // Debug logging for first month to verify changes
+                    if (region === 'Global' && monthsSinceLaunch === 0) {
+                        console.log("🎯 DECEMBER LAUNCH - FRONT-LOADED MODEL:");
+                        console.log("Adoption progress:", (adoptionProgress * 100) + "%");
+                        console.log("Current adoption rate:", (currentAdoptionRate * 100).toFixed(1) + "%");
+                        console.log("Devices sold:", actualDevicesSold.toLocaleString());
+                        console.log("Penetration:", (penetration * 100).toFixed(1) + "%");
+                    }
                     
                     const baseScansPerMonth = 20;
                     const engagementMultiplier = Math.min(2.0, inputs.scans / baseScansPerMonth);
@@ -351,12 +370,14 @@
                     const prevSalesLeaders = i > 2 ? enhanced[region].salesLeaders[i-1] : data.salesLeaders[i-1];
                     const prevNewLeaders = i > 2 ? enhanced[region].newLeaders[i-1] : data.newLeaders[i-1];
                     
-                    const retainedExisting = prevSalesLeaders * (1 + retentionImprovement * 0.1 / 3);
-                    const retainedNew = prevNewLeaders * (1 + newRetentionImprovement * 0.15 / 3);
+                    // MODERATE IMPACT FACTORS (increased from conservative)
+                    const retainedExisting = prevSalesLeaders * (1 + retentionImprovement * 0.25 / 3);
+                    const retainedNew = prevNewLeaders * (1 + newRetentionImprovement * 0.35 / 3);
                     const retentionBonus = (retainedExisting + retainedNew) - (prevSalesLeaders + prevNewLeaders);
                     
                     const subscriptionGrowth = (data.subscriptions[i] + subsBoost) / data.subscriptions[i] - 1;
-                    const recruitmentBoost = 1 + (subscriptionGrowth * 0.5) + (penetration * 0.3);
+                    // STRONGER RECRUITMENT MULTIPLIERS
+                    const recruitmentBoost = 1 + (subscriptionGrowth * 0.8) + (penetration * 0.5);
                     enhanced[region].newLeaders[i] = Math.round(data.newLeaders[i] * recruitmentBoost);
                     
                     enhanced[region].salesLeaders[i] = Math.round(data.salesLeaders[i] + retentionBonus + (enhanced[region].newLeaders[i] - data.newLeaders[i]));
@@ -376,6 +397,13 @@
                     
                     const totalSalesBoost = scsBoost + subsBoost + excitementBoost - cannibalizationLoss;
                     enhanced[region].totalSales[i] = Math.round(data.totalSales[i] + totalSalesBoost + prysmRevenue + salesLeaderRevenueBump);
+                    
+                    // Additional debug for Global first month
+                    if (region === 'Global' && monthsSinceLaunch === 0) {
+                        console.log("Retention bonus:", Math.round(retentionBonus));
+                        console.log("Incremental new leaders:", incrementalNewLeaders);
+                        console.log("Total incremental leaders:", Math.round(retentionBonus + incrementalNewLeaders));
+                    }
                 }
             });
 
@@ -554,6 +582,7 @@
         });
 
         document.addEventListener('DOMContentLoaded', function() {
+            console.log("🎯 Model initializing with front-loaded adoption...");
             initCharts();
             updateCharts();
         });
