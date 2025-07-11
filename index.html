@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prysm iO Product Launch Model</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        * { box-sizing: border-box; }
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; padding: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; }
+        .container { max-width: 1600px; margin: 0 auto; background: white; border-radius: 20px; padding: 30px; box-shadow: 0 20px 40px rgba(0,0,0,0.1); }
+        .title-container { display: flex; align-items: center; justify-content: center; margin-bottom: 30px; }
+        .prysm-logo { width: 60px; height: 60px; margin-right: 20px; object-fit: contain; }
+        .logo-placeholder { width: 60px; height: 60px; margin-right: 20px; background: linear-gradient(45deg, #667eea, #764ba2); border-radius: 12px; display: flex; align-items: center; justify-content: center; }
+        .logo-text { color: white; font-weight: bold; font-size: 18px; }
+        h1 { color: #2c3e50; font-size: 2.5em; margin: 0; background: linear-gradient(45deg, #667eea, #764ba2); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .summary-section { margin-bottom: 30px; }
+        .summary-title { color: #2c3e50; font-size: 1.3em; font-weight: 600; margin-bottom: 15px; text-align: center; }
+        .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-bottom: 20px; }
+        .summary-box { background: linear-gradient(135deg, #667eea, #764ba2); color: white; border-radius: 6px; padding: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.15); border: none; }
+        .summary-box-title { font-size: 0.75em; font-weight: 600; color: rgba(255,255,255,0.9); margin-bottom: 5px; }
+        .summary-box-value { font-size: 1.1em; font-weight: 700; color: white; }
+        .header { display: flex; align-items: center; justify-content: center; margin-bottom: 30px; padding: 20px; background: #f8f9fa; border-radius: 12px; }
+        .region-select { display: flex; align-items: center; gap: 10px; }
+        .region-select label { font-weight: 600; color: #2c3e50; }
+        .region-select select { padding: 8px 12px; border: 2px solid #667eea; border-radius: 6px; font-size: 1em; background: white; }
+        .charts { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; margin-bottom: 30px; }
+        .chart { background: white; border-radius: 8px; padding: 15px; box-shadow: 0 2px 6px rgba(0,0,0,0.08); border: 1px solid #e1e8ed; }
+        .chart-title { font-weight: 600; color: #2c3e50; margin-bottom: 10px; font-size: 0.9em; text-align: center; }
+        .chart-canvas { height: 150px; }
+        .controls { margin-bottom: 30px; }
+        .toggle-btn { background: linear-gradient(45deg, #667eea, #764ba2); color: white; padding: 15px 25px; border: none; border-radius: 8px; font-size: 1.1em; font-weight: 600; cursor: pointer; width: 100%; position: relative; display: flex; align-items: center; justify-content: center; transition: all 0.3s ease; }
+        .toggle-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3); }
+        .toggle-btn::after { content: '▼'; margin-left: 10px; transition: transform 0.3s ease; }
+        .toggle-btn.active::after { transform: rotate(180deg); }
+        .controls-content { display: none; padding: 20px; background: #f8f9fa; border-radius: 0 0 8px 8px; }
+        .controls-content.show { display: block; }
+        .calc-btn { background: linear-gradient(45deg, #2ecc71, #27ae60); color: white; padding: 15px 30px; border: none; border-radius: 8px; font-size: 1.1em; font-weight: 600; cursor: pointer; margin-bottom: 20px; }
+        .params { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+        .param-group { background: white; padding: 15px; border-radius: 8px; border-left: 3px solid #667eea; }
+        .param-group h3 { color: #2c3e50; margin-bottom: 15px; font-size: 1em; }
+        .param { margin-bottom: 10px; }
+        .param label { display: block; font-weight: 600; color: #34495e; margin-bottom: 5px; font-size: 0.9em; }
+        .param input { width: 100%; padding: 8px; border: 1px solid #e1e8ed; border-radius: 4px; font-size: 0.9em; }
+        .assumptions { background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 8px; padding: 15px; margin-top: 20px; }
+        .assumptions h3 { color: #856404; margin-bottom: 10px; }
+        .assumptions ul { margin: 0; padding-left: 20px; }
+        .assumptions li { color: #856404; margin-bottom: 5px; }
+        .model-explanation { background: #f8f9fa; border: 1px solid #e1e8ed; border-radius: 8px; padding: 20px; margin-top: 20px; }
+        .model-explanation h3 { color: #2c3e50; margin-bottom: 15px; }
+        .explanation-content p { margin-bottom: 12px; line-height: 1.5; color: #34495e; }
+        .explanation-content p strong { color: #2c3e50; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="title-container">
+            <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjYwIiBoZWlnaHQ9IjYwIiByeD0iMTAiIGZpbGw9IiM2NjdlZWEiLz4KPHN2ZyB4PSIxNSIgeT0iMTUiIHdpZHRoPSIzMCIgaGVpZ2h0PSIzMCIgdmlld0JveD0iMCAwIDMwIDMwIiBmaWxsPSJub25lIj4KPHA+UDwvcD4KPC9zdmc+Cjx0ZXh0IHg9IjMwIiB5PSIzOCIgZm9udC1mYW1pbHk9IkFyaWFsLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjE4IiBmb250LXdlaWdodD0iYm9sZCIgZmlsbD0id2hpdGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiPlA8L3RleHQ+Cjwvc3ZnPg==" 
+                 alt="Prysm Logo" 
+                 class="prysm-logo"
+                 onerror="this.style.display='none'; document.querySelector('.logo-placeholder').style.display='flex';" />
+            
+            <!-- Fallback placeholder that looks professional -->
+            <div class="logo-placeholder" style="display: none;">
+                <div class="logo-text">Prysm</div>
+            </div>
+            
+            <h1>Prysm iO™ Product Launch Model</h1>
+        </div>
+        
+        <div class="header">
+            <div class="region-select">
+                <label for="regionSelect">View Region:</label>
+                <select id="regionSelect" onchange="updateCharts()">
+                    <option value="Global">Global</option>
+                    <option value="North America">North America</option>
+                    <option value="Latin America">Latin America</option>
+                    <option value="SEAPAC">SEAPAC</option>
+                    <option value="EU&A">EU&A</option>
+                    <option value="HK/MC/TW">HK/MC/TW</option>
+                    <option value="Japan">Japan</option>
+                    <option value="Korea">Korea</option>
+                </select>
+            </div>
+        </div>
+        
+        <div class="summary-section">
+            <div class="summary-title">Initial 3-Month Totals (Dec - Feb)</div>
+            <div class="summary-grid" id="summaryGrid">
+                <!-- Populated by JavaScript -->
+            </div>
+        </div>
+        
+        <div class="charts">
+            <div class="chart"><div class="chart-title">Total Sales ($)</div><div class="chart-canvas"><canvas id="chart1"></canvas></div></div>
+            <div class="chart"><div class="chart-title">Sales Leader Count</div><div class="chart-canvas"><canvas id="chart3"></canvas></div></div>
+            <div class="chart"><div class="chart-title">Overall Sales Leader Retention (%)</div><div class="chart-canvas"><canvas id="chart4"></canvas></div></div>
+            
+            <div class="chart"><div class="chart-title">New Sales Leader Count</div><div class="chart-canvas"><canvas id="chart5"></canvas></div></div>
+            <div class="chart"><div class="chart-title">New Sales Leader Retention (%)</div><div class="chart-canvas"><canvas id="chart6"></canvas></div></div>
+            <div class="chart"><div class="chart-title">Subscription Sales ($)</div><div class="chart-canvas"><canvas id="chart7"></canvas></div></div>
+            
+            <div class="chart"><div class="chart-title">Prysm Device and Product Revenue ($)</div><div class="chart-canvas"><canvas id="chart2"></canvas></div></div>
+            <div class="chart"><div class="chart-title">Prysm Device Count Sold</div><div class="chart-canvas"><canvas id="chart8"></canvas></div></div>
+            <div class="chart"><div class="chart-title">Scans Performed</div><div class="chart-canvas"><canvas id="chart9"></canvas></div></div>
+        </div>
+        
+        <div class="controls">
+            <button class="toggle-btn" onclick="toggleControls()">📊 Adjust Model Parameters</button>
+            <div class="controls-content" id="controlsContent">
+                <button class="calc-btn" onclick="recalculate()">Recalculate Impact 🚀</button>
+                
+                <div class="params">
+                    <div class="param-group">
+                        <h3>📱 Product Settings</h3>
+                        <div class="param"><label>Prysm Price ($)</label><input type="number" id="price" value="300"></div>
+                        <div class="param"><label>Scans per Month</label><input type="number" id="scans" value="20"></div>
+                        <div class="param"><label>Conversion Rate (%)</label><input type="number" id="conversion" value="15"></div>
+                        <div class="param"><label>Average Order ($)</label><input type="number" id="orderSize" value="85"></div>
+                        <div class="param"><label>Max Devices Per Person</label><input type="number" id="maxDevices" value="1"></div>
+                    </div>
+                    
+                    <div class="param-group">
+                        <h3>⚙️ Business Settings</h3>
+                        <div class="param"><label>Base Participation Rate (%)</label><input type="number" id="participation" value="65"></div>
+                        <div class="param"><label>SCS Performance Boost (%)</label><input type="number" id="scsPerformanceBoost" value="15"></div>
+                        <div class="param"><label>Subscription Performance Boost (%)</label><input type="number" id="subsPerformanceBoost" value="20"></div>
+                    </div>
+                    
+                    <div class="param-group">
+                        <h3>📈 Impact Assumptions</h3>
+                        <div class="param"><label>SCS Sales Increase (%)</label><input type="number" id="scsBoost" value="25"></div>
+                        <div class="param"><label>Subscription Increase (%)</label><input type="number" id="subsBoost" value="20"></div>
+                        <div class="param"><label>Excitement Boost (%)</label><input type="number" id="activityBoost" value="12"></div>
+                        <div class="param"><label>SCS Cannibalization (%)</label><input type="number" id="cannibalization" value="60"></div>
+                    </div>
+                    
+                    <div class="param-group">
+                        <h3>📊 Retention Improvements</h3>
+                        <div class="param"><label>New Leader Retention Boost (%)</label><input type="number" id="newRetentionBoost" value="15"></div>
+                        <div class="param"><label>Existing Leader Retention Boost (%)</label><input type="number" id="retentionBoost" value="8"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="assumptions">
+            <h3>Key Model Assumptions</h3>
+            <ul>
+                <li>📊 Uses actual sales leader performance data from your Q1 2025 dataset (158,292 records)</li>
+                <li>💰 Sales amounts converted from points to USD (×1.29 conversion factor)</li>
+                <li>🎯 75% concept interest with price sensitivity based on survey data</li>
+                <li>📈 Regional performance differences affect Prysm adoption rates</li>
+                <li>🔍 Prysm impact scales with penetration in each region</li>
+                <li>⏱️ Growth compounds monthly starting December 2024</li>
+            </ul>
+        </div>
+        
+        <div class="model-explanation">
+            <h3>How the Model Works</h3>
+            <div class="explanation-content">
+                <p><strong>1. Prysm Adoption:</strong> Based on price sensitivity (lower price = higher adoption) and participation rate, with gradual rollout over time.</p>
+                
+                <p><strong>2. Direct Revenue:</strong> Prysm devices generate revenue through scans that convert to product orders (Scans × Conversion Rate × Average Order).</p>
+                
+                <p><strong>3. Engagement Effect:</strong> More scans per device create an engagement multiplier (up to 2x) that strengthens retention and subscription impacts.</p>
+                
+                <p><strong>4. Retention Improvements:</strong> Better retention means fewer sales leaders leave each month, with the effect scaling based on Prysm penetration and engagement. The 3-month retention improvement is applied as a monthly benefit (divided by 3).</p>
+                
+                <p><strong>5. Sales Leader Growth:</strong> Enhanced retention leads to more total sales leaders, while improved subscriptions drive new leader recruitment.</p>
+                
+                <p><strong>6. Business Impact:</strong> Three types of sales boosts apply based on penetration:
+                    <br>• <em>SCS Boost:</em> Increased sales of SCS products (25% of total sales)
+                    <br>• <em>Subscription Boost:</em> Enhanced subscription performance (strengthened by engagement)
+                    <br>• <em>Excitement Boost:</em> General productivity increase across all sales categories
+                    <br>• <em>Cannibalization:</em> Some SCS boost comes from existing sales rather than net new</p>
+                
+                <p><strong>7. Revenue from Additional Leaders:</strong> Each incremental new leader generates ~$1,171 in sales, each retained existing leader generates ~$2,972 in sales (regional averages from actual data).</p>
+                
+                <p><strong>8. Compounding Effects:</strong> All improvements compound monthly, with each month's enhanced metrics becoming the baseline for the next month's calculations.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const actualData = {
+            'Global': {
+                months: ['Oct', 'Nov', 'Dec', 'Jan', 'Feb'],
+                totalSales: [114704710, 110908117, 94145645, 86323253, 92849904],
+                salesLeaders: [27652, 28018, 25848, 24463, 24155],
+                newLeaders: [2441, 2832, 1520, 1459, 1601],
+                retention: [79.6, 77.1, 80.7, 82.8, 83.0],
+                newRetention: [47.8, 46.3, 48.4, 49.7, 49.8],
+                subscriptions: [48827418, 49909858, 48351470, 45776194, 47722860]
+            },
+            'North America': {
+                months: ['Oct', 'Nov', 'Dec', 'Jan', 'Feb'],
+                totalSales: [17858906, 17167842, 14606830, 13415449, 14388352],
+                salesLeaders: [4252, 4330, 3940, 3747, 3689],
+                newLeaders: [377, 423, 223, 209, 234],
+                retention: [79.3, 76.5, 80.3, 82.4, 82.8],
+                newRetention: [47.6, 45.9, 48.2, 49.4, 49.7],
+                subscriptions: [7658690, 7812908, 7540381, 7140271, 7438622]
+            },
+            'Latin America': {
+                months: ['Oct', 'Nov', 'Dec', 'Jan', 'Feb'],
+                totalSales: [9026709, 8600763, 7264748, 6667802, 7147273],
+                salesLeaders: [2934, 2968, 2688, 2530, 2488],
+                newLeaders: [259, 285, 144, 139, 154],
+                retention: [78.7, 75.8, 80.0, 82.1, 82.5],
+                newRetention: [47.2, 45.5, 48.0, 49.3, 49.5],
+                subscriptions: [1829260, 1863452, 1774814, 1678495, 1747176]
+            },
+            'SEAPAC': {
+                months: ['Oct', 'Nov', 'Dec', 'Jan', 'Feb'],
+                totalSales: [21731380, 21144975, 17849460, 16383410, 17557737],
+                salesLeaders: [5455, 5598, 5176, 4922, 4878],
+                newLeaders: [481, 563, 306, 295, 325],
+                retention: [79.7, 76.9, 80.8, 82.9, 83.1],
+                newRetention: [47.8, 46.1, 48.5, 49.7, 49.9],
+                subscriptions: [5231683, 5412975, 5168474, 4889483, 5090348]
+            },
+            'EU&A': {
+                months: ['Oct', 'Nov', 'Dec', 'Jan', 'Feb'],
+                totalSales: [13575114, 12879586, 10901729, 10001121, 10714523],
+                salesLeaders: [3313, 3349, 3037, 2864, 2821],
+                newLeaders: [292, 317, 163, 156, 172],
+                retention: [79.5, 77.0, 80.5, 82.6, 82.9],
+                newRetention: [47.7, 46.2, 48.3, 49.6, 49.7],
+                subscriptions: [7305280, 7492127, 7191472, 6800599, 7073192]
+            },
+            'HK/MC/TW': {
+                months: ['Oct', 'Nov', 'Dec', 'Jan', 'Feb'],
+                totalSales: [10827088, 10325143, 8775386, 8045580, 8624887],
+                salesLeaders: [2569, 2599, 2352, 2219, 2186],
+                newLeaders: [227, 247, 126, 120, 133],
+                retention: [79.8, 77.2, 80.9, 83.0, 83.2],
+                newRetention: [47.9, 46.3, 48.5, 49.8, 49.9],
+                subscriptions: [4524825, 4657022, 4471118, 4228583, 4402773]
+            },
+            'Japan': {
+                months: ['Oct', 'Nov', 'Dec', 'Jan', 'Feb'],
+                totalSales: [20235648, 19568624, 16444840, 15095538, 16181174],
+                salesLeaders: [6103, 6192, 5588, 5271, 5197],
+                newLeaders: [538, 621, 330, 319, 352],
+                retention: [79.4, 76.8, 80.6, 82.7, 83.0],
+                newRetention: [47.6, 46.1, 48.4, 49.6, 49.8],
+                subscriptions: [14950196, 15426170, 14831766, 14029485, 14601160]
+            },
+            'Korea': {
+                months: ['Oct', 'Nov', 'Dec', 'Jan', 'Feb'],
+                totalSales: [13749605, 14310027, 10598911, 9724872, 10429539],
+                salesLeaders: [3026, 2982, 2667, 2510, 2476],
+                newLeaders: [267, 276, 148, 142, 156],
+                retention: [79.9, 77.3, 80.7, 82.8, 83.1],
+                newRetention: [47.9, 46.4, 48.4, 49.7, 49.9],
+                subscriptions: [7325925, 7244603, 7362366, 7009417, 7304819]
+            }
+        };
+
+        const salesPerLeader = {
+            'Global': { avgSalesPerLeader: 2972, avgSalesPerNewLeader: 1171 },
+            'North America': { avgSalesPerLeader: 3208, avgSalesPerNewLeader: 1264 },
+            'Latin America': { avgSalesPerLeader: 2457, avgSalesPerNewLeader: 1251 },
+            'SEAPAC': { avgSalesPerLeader: 3311, avgSalesPerNewLeader: 1299 },
+            'EU&A': { avgSalesPerLeader: 3211, avgSalesPerNewLeader: 1165 },
+            'HK/MC/TW': { avgSalesPerLeader: 3385, avgSalesPerNewLeader: 1063 },
+            'Japan': { avgSalesPerLeader: 2309, avgSalesPerNewLeader: 560 },
+            'Korea': { avgSalesPerLeader: 3387, avgSalesPerNewLeader: 1021 }
+        };
+
+        let charts = {};
+        let currentRegion = 'Global';
+
+        function getInputs() {
+            return {
+                price: parseFloat(document.getElementById('price').value) || 300,
+                scans: parseFloat(document.getElementById('scans').value) || 20,
+                conversion: parseFloat(document.getElementById('conversion').value) / 100 || 0.15,
+                orderSize: parseFloat(document.getElementById('orderSize').value) || 85,
+                maxDevices: parseFloat(document.getElementById('maxDevices').value) || 1,
+                participation: parseFloat(document.getElementById('participation').value) / 100 || 0.65,
+                scsBoost: parseFloat(document.getElementById('scsBoost').value) / 100 || 0.25,
+                subsBoost: parseFloat(document.getElementById('subsBoost').value) / 100 || 0.20,
+                activityBoost: parseFloat(document.getElementById('activityBoost').value) / 100 || 0.12,
+                cannibalization: parseFloat(document.getElementById('cannibalization').value) / 100 || 0.60,
+                newRetentionBoost: parseFloat(document.getElementById('newRetentionBoost').value) / 100 || 0.15,
+                retentionBoost: parseFloat(document.getElementById('retentionBoost').value) / 100 || 0.08
+            };
+        }
+
+        function calculatePrysmImpact() {
+            const inputs = getInputs();
+            const enhanced = {};
+
+            function getPricePurchaseIntent(price) {
+                if (price <= 199) return 0.70;
+                if (price <= 249) return 0.63;
+                if (price <= 300) return 0.56;
+                return Math.max(0.20, 0.56 - ((price - 300) / 100) * 0.10);
+            }
+
+            const pricePurchaseIntent = getPricePurchaseIntent(inputs.price);
+
+            Object.entries(actualData).forEach(([region, data]) => {
+                enhanced[region] = {
+                    months: data.months,
+                    totalSales: [...data.totalSales],
+                    prysmRevenue: [0, 0, 0, 0, 0],
+                    salesLeaders: [...data.salesLeaders],
+                    retention: [...data.retention],
+                    newLeaders: [...data.newLeaders],
+                    newRetention: [...data.newRetention],
+                    subscriptions: [...data.subscriptions],
+                    prysmsSold: [0, 0, 0, 0, 0],
+                    scans: [0, 0, 0, 0, 0]
+                };
+
+                for (let i = 2; i < 5; i++) {
+                    const monthsSinceLaunch = i - 2;
+                    
+                    const baseAdoptionRate = pricePurchaseIntent * inputs.participation;
+                    const adoptionProgress = 1 - Math.exp(-0.5 * (monthsSinceLaunch + 1));
+                    const currentAdoptionRate = baseAdoptionRate * adoptionProgress;
+                    
+                    const potentialAdopters = Math.round(data.salesLeaders[i] * currentAdoptionRate);
+                    const actualDevicesSold = potentialAdopters * inputs.maxDevices;
+                    const penetration = data.salesLeaders[i] > 0 ? actualDevicesSold / data.salesLeaders[i] : 0;
+                    
+                    const baseScansPerMonth = 20;
+                    const engagementMultiplier = Math.min(2.0, inputs.scans / baseScansPerMonth);
+                    
+                    enhanced[region].prysmsSold[i] = actualDevicesSold;
+                    enhanced[region].scans[i] = actualDevicesSold * inputs.scans;
+                    
+                    const prysmRevenue = actualDevicesSold * inputs.scans * inputs.conversion * inputs.orderSize;
+                    enhanced[region].prysmRevenue[i] = Math.round(prysmRevenue);
+                    
+                    const actualSCSRevenue = data.totalSales[i] * 0.25;
+                    const scsBoost = actualSCSRevenue * inputs.scsBoost * penetration;
+                    const subsBoost = data.subscriptions[i] * inputs.subsBoost * penetration * engagementMultiplier;
+                    const excitementBoost = data.totalSales[i] * inputs.activityBoost * penetration;
+                    const cannibalizationLoss = scsBoost * inputs.cannibalization;
+                    
+                    enhanced[region].retention[i] = Math.min(95, data.retention[i] + inputs.retentionBoost * 100 * penetration * engagementMultiplier);
+                    enhanced[region].newRetention[i] = Math.min(85, data.newRetention[i] + inputs.newRetentionBoost * 100 * penetration * engagementMultiplier);
+                    
+                    const retentionImprovement = (enhanced[region].retention[i] - data.retention[i]) / 100;
+                    const newRetentionImprovement = (enhanced[region].newRetention[i] - data.newRetention[i]) / 100;
+                    
+                    const prevSalesLeaders = i > 2 ? enhanced[region].salesLeaders[i-1] : data.salesLeaders[i-1];
+                    const prevNewLeaders = i > 2 ? enhanced[region].newLeaders[i-1] : data.newLeaders[i-1];
+                    
+                    const retainedExisting = prevSalesLeaders * (1 + retentionImprovement * 0.1 / 3);
+                    const retainedNew = prevNewLeaders * (1 + newRetentionImprovement * 0.15 / 3);
+                    const retentionBonus = (retainedExisting + retainedNew) - (prevSalesLeaders + prevNewLeaders);
+                    
+                    const subscriptionGrowth = (data.subscriptions[i] + subsBoost) / data.subscriptions[i] - 1;
+                    const recruitmentBoost = 1 + (subscriptionGrowth * 0.5) + (penetration * 0.3);
+                    enhanced[region].newLeaders[i] = Math.round(data.newLeaders[i] * recruitmentBoost);
+                    
+                    enhanced[region].salesLeaders[i] = Math.round(data.salesLeaders[i] + retentionBonus + (enhanced[region].newLeaders[i] - data.newLeaders[i]));
+                    
+                    const incrementalNewLeaders = enhanced[region].newLeaders[i] - data.newLeaders[i];
+                    const incrementalExistingLeaders = enhanced[region].salesLeaders[i] - data.salesLeaders[i] - incrementalNewLeaders;
+                    
+                    const avgSalesPerExisting = salesPerLeader[region]?.avgSalesPerLeader || salesPerLeader['Global'].avgSalesPerLeader;
+                    const avgSalesPerNew = salesPerLeader[region]?.avgSalesPerNewLeader || salesPerLeader['Global'].avgSalesPerNewLeader;
+                    
+                    const revenueFromNewLeaders = incrementalNewLeaders * avgSalesPerNew;
+                    const revenueFromRetainedLeaders = incrementalExistingLeaders * avgSalesPerExisting;
+                    const salesLeaderRevenueBump = revenueFromNewLeaders + revenueFromRetainedLeaders;
+                    
+                    const salesLeaderGrowthFactor = enhanced[region].salesLeaders[i] / data.salesLeaders[i];
+                    enhanced[region].subscriptions[i] = Math.round(data.subscriptions[i] * salesLeaderGrowthFactor + subsBoost);
+                    
+                    const totalSalesBoost = scsBoost + subsBoost + excitementBoost - cannibalizationLoss;
+                    enhanced[region].totalSales[i] = Math.round(data.totalSales[i] + totalSalesBoost + prysmRevenue + salesLeaderRevenueBump);
+                }
+            });
+
+            return enhanced;
+        }
+
+        function initCharts() {
+            const chartIds = ['chart1', 'chart2', 'chart3', 'chart4', 'chart5', 'chart6', 'chart7', 'chart8', 'chart9'];
+            const colors = ['#667eea', '#2ecc71', '#e74c3c', '#f39c12', '#9b59b6', '#1abc9c', '#34495e', '#e67e22', '#95a5a6'];
+
+            chartIds.forEach((id, index) => {
+                const ctx = document.getElementById(id).getContext('2d');
+                charts[id] = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: [],
+                        datasets: [
+                            {
+                                label: 'Actual (Baseline)',
+                                data: [],
+                                borderColor: '#95a5a6',
+                                backgroundColor: '#95a5a620',
+                                borderWidth: 2,
+                                borderDash: [5, 5],
+                                fill: false,
+                                tension: 0.4
+                            },
+                            {
+                                label: 'With Prysm Impact',
+                                data: [],
+                                borderColor: colors[index],
+                                backgroundColor: colors[index] + '20',
+                                borderWidth: 3,
+                                fill: false,
+                                tension: 0.4
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { 
+                            legend: { 
+                                display: true,
+                                position: 'top',
+                                labels: {
+                                    usePointStyle: true,
+                                    font: { size: 10 }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: { 
+                                display: true, 
+                                grid: { display: false },
+                                ticks: { font: { size: 9 } }
+                            },
+                            y: { 
+                                display: true, 
+                                grid: { color: '#f0f0f0' },
+                                ticks: { font: { size: 9 } }
+                            }
+                        }
+                    }
+                });
+            });
+        }
+
+        function updateSummaryBoxes() {
+            const enhanced = calculatePrysmImpact();
+            const enhancedData = enhanced[currentRegion];
+            const actualBaseline = actualData[currentRegion];
+
+            const decIndex = 2, janIndex = 3, febIndex = 4;
+            
+            const incrementalSales = (enhancedData.totalSales[decIndex] + enhancedData.totalSales[janIndex] + enhancedData.totalSales[febIndex]) - 
+                                   (actualBaseline.totalSales[decIndex] + actualBaseline.totalSales[janIndex] + actualBaseline.totalSales[febIndex]);
+            
+            const incrementalSalesLeaders = enhancedData.salesLeaders[febIndex] - actualBaseline.salesLeaders[febIndex];
+            
+            const retentionChange = enhancedData.retention[febIndex] - actualBaseline.retention[febIndex];
+            const retentionPercentChange = ((enhancedData.retention[febIndex] / actualBaseline.retention[febIndex]) - 1) * 100;
+            
+            const incrementalNewLeaders = (enhancedData.newLeaders[decIndex] + enhancedData.newLeaders[janIndex] + enhancedData.newLeaders[febIndex]) - 
+                                        (actualBaseline.newLeaders[decIndex] + actualBaseline.newLeaders[janIndex] + actualBaseline.newLeaders[febIndex]);
+            
+            const newRetentionChange = enhancedData.newRetention[febIndex] - actualBaseline.newRetention[febIndex];
+            const newRetentionPercentChange = ((enhancedData.newRetention[febIndex] / actualBaseline.newRetention[febIndex]) - 1) * 100;
+            
+            const incrementalSubscriptions = (enhancedData.subscriptions[decIndex] + enhancedData.subscriptions[janIndex] + enhancedData.subscriptions[febIndex]) - 
+                                           (actualBaseline.subscriptions[decIndex] + actualBaseline.subscriptions[janIndex] + actualBaseline.subscriptions[febIndex]);
+            
+            const prysmRevenue = enhancedData.prysmRevenue[decIndex] + enhancedData.prysmRevenue[janIndex] + enhancedData.prysmRevenue[febIndex];
+            const prysmDevices = enhancedData.prysmsSold[decIndex] + enhancedData.prysmsSold[janIndex] + enhancedData.prysmsSold[febIndex];
+            const scansPerformed = enhancedData.scans[decIndex] + enhancedData.scans[janIndex] + enhancedData.scans[febIndex];
+
+            const summaryData = [
+                { title: "Incremental Sales", value: "$" + Math.round(incrementalSales).toLocaleString() },
+                { title: "Incremental Sales Leader Count", value: Math.round(incrementalSalesLeaders).toLocaleString() },
+                { title: "Increased Overall SL Retention", value: `+${retentionPercentChange.toFixed(1)}% (+${retentionChange.toFixed(1)}pp)` },
+                { title: "Incremental New Sales Leader Count", value: Math.round(incrementalNewLeaders).toLocaleString() },
+                { title: "Increased New SL Retention", value: `+${newRetentionPercentChange.toFixed(1)}% (+${newRetentionChange.toFixed(1)}pp)` },
+                { title: "Incremental Subscription Sales", value: "$" + Math.round(incrementalSubscriptions).toLocaleString() },
+                { title: "Prysm Device and Product Revenue", value: "$" + Math.round(prysmRevenue).toLocaleString() },
+                { title: "Prysm Devices Sold", value: Math.round(prysmDevices).toLocaleString() },
+                { title: "Scans Performed", value: Math.round(scansPerformed).toLocaleString() }
+            ];
+
+            const summaryGrid = document.getElementById('summaryGrid');
+            summaryGrid.innerHTML = '';
+            
+            summaryData.forEach(item => {
+                const box = document.createElement('div');
+                box.className = 'summary-box';
+                box.innerHTML = `
+                    <div class="summary-box-title">${item.title}</div>
+                    <div class="summary-box-value">${item.value}</div>
+                `;
+                summaryGrid.appendChild(box);
+            });
+        }
+
+        function updateCharts() {
+            const enhanced = calculatePrysmImpact();
+            const enhancedData = enhanced[currentRegion];
+            const actualBaseline = actualData[currentRegion];
+
+            const enhancedDatasets = [
+                enhancedData.totalSales,
+                enhancedData.prysmRevenue,
+                enhancedData.salesLeaders,
+                enhancedData.retention,
+                enhancedData.newLeaders,
+                enhancedData.newRetention,
+                enhancedData.subscriptions,
+                enhancedData.prysmsSold,
+                enhancedData.scans
+            ];
+
+            const actualDatasets = [
+                actualBaseline.totalSales,
+                [0, 0, 0, 0, 0],
+                actualBaseline.salesLeaders,
+                actualBaseline.retention,
+                actualBaseline.newLeaders,
+                actualBaseline.newRetention,
+                actualBaseline.subscriptions,
+                [0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0]
+            ];
+
+            Object.keys(charts).forEach((chartId, index) => {
+                charts[chartId].data.labels = enhancedData.months;
+                charts[chartId].data.datasets[0].data = actualDatasets[index];
+                charts[chartId].data.datasets[1].data = enhancedDatasets[index];
+                charts[chartId].update();
+            });
+            
+            updateSummaryBoxes();
+        }
+
+        function toggleControls() {
+            const content = document.getElementById('controlsContent');
+            const button = document.querySelector('.toggle-btn');
+            content.classList.toggle('show');
+            button.classList.toggle('active');
+        }
+
+        function recalculate() {
+            updateCharts();
+        }
+
+        document.getElementById('regionSelect').addEventListener('change', function() {
+            currentRegion = this.value;
+            updateCharts();
+        });
+
+        document.addEventListener('DOMContentLoaded', function() {
+            initCharts();
+            updateCharts();
+        });
+    </script>
+</body>
+</html>
